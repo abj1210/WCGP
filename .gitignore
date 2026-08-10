@@ -1,0 +1,21 @@
+# ---- 构建输出 ----
+x64/
+*.exe
+*.obj
+*.ilk
+*.pdb
+*.tlog/
+*.log
+
+# ---- Visual Studio 缓存 ----
+.vs/
+*.aps
+*.suo
+*.user
+
+# ---- IDE (JetBrains/CLion) ----
+.idea/
+
+# ---- CMake / 临时 ----
+CMakeFiles/
+build/

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- ============================================================
+       WinCry GUI - 内核库(wencry)位置配置
+       1) WENCRY_ROOT  : wencry 源码根目录(提供 cry.h 等头文件)
+          默认: 本工程同级目录下的 wencry
+       2) WENCRY_BUILD : wencry 的 CMake 构建输出目录(提供 *.lib)
+          默认: $(WENCRY_ROOT)\build_vs
+       修改后保存即可。
+       也支持用环境变量 WENCRY_ROOT / WENCRY_BUILD,
+       或 msbuild /p:WENCRY_ROOT=... /p:WENCRY_BUILD=... 覆盖。
+       ============================================================ -->
+  <PropertyGroup>
+    <WENCRY_ROOT Condition="'$(WENCRY_ROOT)'==''">$(ProjectDir)..\wencry</WENCRY_ROOT>
+    <WENCRY_BUILD Condition="'$(WENCRY_BUILD)'==''">$(WENCRY_ROOT)\build_vs</WENCRY_BUILD>
+  </PropertyGroup>
+</Project>

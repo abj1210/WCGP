@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="WinCry GUI.vcxproj" Id="6ae8f202-41e7-42fd-9535-0158a4ee0b6c" />
+</Solution>
