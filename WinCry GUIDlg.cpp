@@ -7,11 +7,10 @@
 #include "WinCry GUI.h"
 #include "WinCry GUIDlg.h"
 #include "afxdialogex.h"
-#include "getval.h"
-#include "base64.h"
-#include "cry.h"
 #include <iostream>
 #include <string>
+
+#define WCGP_VERSION "1.1.0"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -65,7 +64,6 @@ CWinCryGUIDlg::CWinCryGUIDlg(CWnd* pParent /*=nullptr*/)
 void CWinCryGUIDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT1, output);
 	DDX_Control(pDX, IDC_EDIT2, filepath);
 	DDX_Control(pDX, IDC_CHECK1, randomkey);
 	DDX_Control(pDX, IDC_EDIT4, keyinput);
@@ -84,8 +82,11 @@ void CWinCryGUIDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC1, infile);
 	DDX_Control(pDX, IDC_STATIC2, outfile);
 	DDX_Control(pDX, IDC_STATIC3, keyres);
-	DDX_Control(pDX, IDC_STATIC4, mode);
 	DDX_Control(pDX, IDC_STATIC5, Res);
+	DDX_Control(pDX, IDC_STATIC10, result_box);
+	DDX_Control(pDX, IDC_EDIT1, file_size);
+	DDX_Control(pDX, IDC_EDIT6, time_cnt);
+	DDX_Control(pDX, IDC_EDIT7, speed);
 }
 
 BEGIN_MESSAGE_MAP(CWinCryGUIDlg, CDialogEx)
@@ -109,6 +110,21 @@ BEGIN_MESSAGE_MAP(CWinCryGUIDlg, CDialogEx)
 	ON_MESSAGE(WM_UI_START, &CWinCryGUIDlg::OnUiStart)
 	ON_MESSAGE(WM_UI_DONE, &CWinCryGUIDlg::OnUiDone)
 END_MESSAGE_MAP()
+
+
+CString printFileSize(ULONGLONG size)
+{
+	CString str;
+	if (size < 1024)
+		str.Format(_T("%llu B\r\n"), size);
+	else if (size < 1024 * 1024)
+		str.Format(_T("%.2f KB\r\n"), size / 1024.0);
+	else if (size < 1024 * 1024 * 1024)
+		str.Format(_T("%.2f MB\r\n"), size / (1024.0 * 1024.0));
+	else
+		str.Format(_T("%.2f GB\r\n"), size / (1024.0 * 1024.0 * 1024.0));
+	return str;
+}
 
 
 // CWinCryGUIDlg 消息处理程序
@@ -142,14 +158,19 @@ BOOL CWinCryGUIDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
+	for (int i = 0;i < wif.get_cname_num();i++)
+		ctype.AddString(CString(wif.get_cname(i).c_str()));
+	for (int i = 0;i < wif.get_hname_num();i++)
+		htype.AddString(CString(wif.get_hname(i).c_str()));
+
 	ctype.SetCurSel(0);
 	htype.SetCurSel(0);
 	encrypt.SetCheck(BST_CHECKED);
-	output.SetWindowTextW(L"加密模式");
 	CFont mf;
 	mf.CreatePointFont(180, L"宋体");
 	ver.SetFont(&mf);
-	ver.SetWindowTextW(CString(verstring().c_str()));
+	CString versionStr = CString(L"WCGP version: ") + CString(WCGP_VERSION) + CString(L"\r\n") + CString(L"Kernel version: ") + CString(wif.get_version().c_str()) + CString(L"\r\n") + CString(L"Build time: ") + CString(wif.get_buildtime().c_str()) + CString(L"\r\n");
+	ver.SetWindowTextW(versionStr);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -295,22 +316,6 @@ UINT MyThreadFunction(LPVOID pParam)
 		return 1;
 	}
 
-	// 解密/验证前由内核校验 .wenc 文件头(魔数、模式、线程数)
-	if (prm->isDecrypt || prm->isVerify)
-	{
-		if (wencry_check_header(filein) != 0)
-		{
-			dlg->PostMessage(WM_UI_SET_TEXT, UI_RES, (LPARAM)L"无效的加密文件!");
-			if (filein != nullptr) { fclose(filein); filein = nullptr; }
-			if (fileout != nullptr) { fclose(fileout); fileout = nullptr; }
-			UiEnableAll(dlg, TRUE);
-			delete prm;
-			DWORD dwEnd = GetTickCount();
-			dlg->dwElapsed = dwEnd - dwStart;
-			return 1;
-		}
-	}
-
 	if (prm->isVerify)
 	{
 		fileout = nullptr;
@@ -335,7 +340,8 @@ UINT MyThreadFunction(LPVOID pParam)
 
 	CStringA cstrA(prm->keyB64); // 转换为 ANSI 字符串
 	std::string keyStr = cstrA.GetString(); // 转换为 std::string
-	if (!is_valid_b64((unsigned char*)(keyStr.c_str()), keyStr.length()))
+	unsigned char key[24] = { 0 };
+	if (!checkB64Key((const u8_t*)keyStr.c_str(), key))
 	{
 		dlg->PostMessage(WM_UI_SET_TEXT, UI_KEYRES, (LPARAM)L"非法密钥!");
 		dlg->PostMessage(WM_UI_SET_TEXT, UI_RES, (LPARAM)L"启动失败");
@@ -348,9 +354,6 @@ UINT MyThreadFunction(LPVOID pParam)
 		return 2;
 	}
 	dlg->PostMessage(WM_UI_SET_TEXT, UI_KEYRES, (LPARAM)L"合法密钥!");
-
-	unsigned char key[24] = { 0 }; // 16 字节密钥,多出空间防御解码越界写
-	base64_to_hex((unsigned char*)(keyStr.c_str()), keyStr.length(), key);
 	CStringA cstrB(prm->rbuf); // 转换为 ANSI 字符串
 	std::string rbstr = cstrB.GetString(); // 转换为 std::string
 
@@ -359,16 +362,32 @@ UINT MyThreadFunction(LPVOID pParam)
 	Settings settings(prm->ctypeSel - 1, prm->htypeSel - 1, true);
 	dlg->runner = runcrypt_create(filein, fileout, key, settings);
 	dlg->PostMessage(WM_UI_START, 0, 0);
-
-	bool res = false;
-	if (prm->isEncrypt)
-		res = dlg->runner->execute_encrypt((size_t)dlg->fileSize, (unsigned char*)rbstr.c_str());
-	else if (prm->isDecrypt)
-		res = dlg->runner->execute_decrypt((size_t)dlg->fileSize);
-	else
-		res = dlg->runner->execute_verify((size_t)dlg->fileSize);
-
-	dlg->PostMessage(WM_UI_DONE, res, 0);
+	CString resStr = L"运行成功！";
+	unsigned short ftype = 0;
+	try {
+		if (prm->isEncrypt) {
+			dlg->runner->execute_encrypt((size_t)dlg->fileSize, (unsigned char*)rbstr.c_str());
+			dlg->res.ctype = -1;
+			dlg->res.htype = -1;
+		}
+		else if (prm->isDecrypt) {
+			ftype = dlg->runner->execute_decrypt((size_t)dlg->fileSize);
+			dlg->res.ctype = ftype & 0xFF;
+			dlg->res.htype = (ftype >> 8) & 0xFF;
+		}
+		else {
+			ftype = dlg->runner->execute_verify((size_t)dlg->fileSize);
+			dlg->res.ctype = ftype & 0xFF;
+			dlg->res.htype = (ftype >> 8) & 0xFF;
+		}
+	}
+	catch (std::string errlog) {
+		resStr = CString(errlog.c_str());
+		dlg->res.ctype = -1;
+		dlg->res.htype = -1;
+	}
+	dlg->res.resStr = resStr;
+	dlg->PostMessage(WM_UI_DONE, 0, 0);
 	delete prm;
 	DWORD dwEnd = GetTickCount();
 	dlg->dwElapsed = dwEnd - dwStart;
@@ -424,27 +443,30 @@ void CWinCryGUIDlg::OnBnClickedOk()
 void CWinCryGUIDlg::OnBnClickedRadio1()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	output.SetWindowTextW(L"加密模式");
 	save.EnableWindow(true);
 	rbuf.EnableWindow(ctype.GetCurSel() > 1);
+	ctype.EnableWindow(true);
+	htype.EnableWindow(true);
 }
 
 
 void CWinCryGUIDlg::OnBnClickedRadio2()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	output.SetWindowTextW(L"解密模式");
 	save.EnableWindow(true);
 	rbuf.EnableWindow(false);
+	ctype.EnableWindow(false);
+	htype.EnableWindow(false);
 }
 
 
 void CWinCryGUIDlg::OnBnClickedRadio3()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	output.SetWindowTextW(L"验证模式");
 	save.EnableWindow(false);
 	rbuf.EnableWindow(false);
+	ctype.EnableWindow(false);
+	htype.EnableWindow(false);
 	outputpath.SetWindowTextW(L"");
 }
 
@@ -489,9 +511,7 @@ void CWinCryGUIDlg::OnBnClickedCheck1()
 	if (nCheck & BST_CHECKED) {
 		keyinput.SetReadOnly(true);
 		unsigned char* res = getRandomKey();
-		unsigned char out[32];
-		hex_to_base64(res, 16, out);
-		keyinput.SetWindowTextW(CString(out));
+		keyinput.SetWindowTextW(CString(printkey(res).c_str()));
 		delete[] res;
 	}
 	else {
@@ -515,7 +535,6 @@ void CWinCryGUIDlg::OnCbnSelchangeCombo1()
 
 		CString strText;
 		ctype.GetLBText(nIndex, strText);  // 获取选择项的文本
-		output.SetWindowTextW(_T("您选择了：") + strText);
 	}
 }
 
@@ -572,7 +591,6 @@ LRESULT CWinCryGUIDlg::OnUiSetText(WPARAM wParam, LPARAM lParam)
 	const wchar_t* text = reinterpret_cast<const wchar_t*>(lParam);
 	switch (wParam)
 	{
-	case UI_MODE:    mode.SetWindowTextW(text);    break;
 	case UI_RES:     Res.SetWindowTextW(text);     break;
 	case UI_INFILE:  infile.SetWindowTextW(text);  break;
 	case UI_OUTFILE: outfile.SetWindowTextW(text); break;
@@ -600,34 +618,22 @@ LRESULT CWinCryGUIDlg::OnUiStart(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-CString printFileSize(ULONGLONG size)
-{
-	CString str;
-	if (size < 1024)
-		str.Format(_T("%llu B\r\n"), size);
-	else if (size < 1024 * 1024)
-		str.Format(_T("%.2f KB\r\n"), size / 1024.0);
-	else if (size < 1024 * 1024 * 1024)
-		str.Format(_T("%.2f MB\r\n"), size / (1024.0 * 1024.0));
-	else
-		str.Format(_T("%.2f GB\r\n"), size / (1024.0 * 1024.0 * 1024.0));
-	return str;
-}
+
 
 LRESULT CWinCryGUIDlg::OnUiDone(WPARAM wParam, LPARAM lParam)
 {
-	m_progressCtrl.SetPos(100);
-	Res.SetWindowTextW(wParam ? L"运行完成" : L"运行失败");
-	CString str(wParam? L"运行完成\r\n" : L"运行失败\r\n");
-	str += L"文件大小: " + printFileSize(fileSize);
+	Res.SetWindowTextW( res.resStr == L"运行成功！" ? L"运行成功！" : L"运行失败");
+	result_box.SetWindowTextW(CString(L"运行结果: ") + res.resStr);
 	CString strTime;
-	strTime.Format(_T("代码执行耗时: %lf 秒\r\n"), dwElapsed/(1000.0));
-	str += strTime;
-	double speed = (dwElapsed > 0) ? (fileSize / (1024.0 * 1024.0)) / (dwElapsed / 1000.0) : 0.0;
+	strTime.Format(_T(" %lf s"), dwElapsed / (1000.0));
+	time_cnt.SetWindowTextW(strTime);
+	double speed_num = (dwElapsed > 0) ? (fileSize / (1024.0 * 1024.0)) / (dwElapsed / 1000.0) : 0.0;
+	CString strFileSize = printFileSize(fileSize);
+	file_size.SetWindowTextW(strFileSize);
 	CString strSpeed;
-	strSpeed.Format(_T("%.2f MB/s"), speed);
-	str += L"平均速度: " + strSpeed;
-	output.SetWindowTextW(str);
+	strSpeed.Format(_T("%.2f MB/s"), speed_num);
+	speed.SetWindowTextW(strSpeed);
+	m_progressCtrl.SetPos(100);
 	KillTimer(1);
 	if (runner != nullptr)
 	{
@@ -636,6 +642,10 @@ LRESULT CWinCryGUIDlg::OnUiDone(WPARAM wParam, LPARAM lParam)
 	}
 	// 任务结束，等待工作线程完全退出并清理运行状态
 	CleanupWorker();
+	if (res.ctype >= 0 && res.htype >= 0) {
+		ctype.SetCurSel(res.ctype + 1);
+		htype.SetCurSel(res.htype + 1);
+	}
 	run.EnableWindow(TRUE);
 	encrypt.EnableWindow(TRUE);
 	decrypt.EnableWindow(TRUE);
@@ -667,7 +677,6 @@ void CWinCryGUIDlg::OnCbnSelchangeCombo2()
 		default_settings.set_htype(nIndex - 1);
 		CString strText;
 		htype.GetLBText(nIndex, strText);  // 获取选择项的文本
-		output.SetWindowTextW(_T("您选择了：") + strText);
 	}
 }
 

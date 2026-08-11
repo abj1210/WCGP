@@ -31,7 +31,7 @@ if not exist "%WENCRY_BUILD%" (
 )
 
 echo === [1/2] 构建内核+工具库 (%CFG%) ===
-cmake --build "%WENCRY_BUILD%" --config %CFG% --target Wenkernel CMDvals -- /m:1
+cmake --build "%WENCRY_BUILD%" --config %CFG% --target Wenkernel Valhelper -- /m:1
 if errorlevel 1 goto :err
 
 echo === [2/2] 构建 GUI (%CFG%|x64) ===

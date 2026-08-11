@@ -1,7 +1,7 @@
-﻿# WCGP--Windows wenCry Gui Program 适用于Windows的WenCry图形界面程序
+﻿# WCGP--Windows wenCry Gui Program 适用于Windows的wencry图形界面程序
 
-- 生成时间: 2026.8.10
-- 生成版本: 1.0.0
+- 生成时间: 2026.8.11
+- 生成版本: 1.1.0
 
 ## 简介
 WCGP（Windows wenCry Gui Program）是一个适用于Windows操作系统的图形界面程序，旨在提供用户友好的界面来管理和操作WenCry相关功能。该程序简化了复杂的命令行操作，使用户能够更轻松地使用WenCry。
@@ -88,14 +88,14 @@ cmake -S <wencry> -B <wencry>\build_vs -G "Visual Studio 17 2022" -A x64 -DBUILD
 
 10. **CMake 工程引用配置传播错误 → 链接总找 Debug 库**
     - 现象：GUI 用 `ProjectReference` 引用 CMake 生成的库工程时，MSBuild 对 CMake 工程默认取第一个配置（`Debug|x64`），导致 **Release 构建也链接 `...\aes\Debug\Aes.lib`**，报 `LNK1181 无法打开输入文件`。
-    - 解决：**移除 GUI 的全部 `ProjectReference`**，改为在 `<Link>` 中显式链接 6 个库（`Wenkernel.lib;Multiaes.lib;Hash.lib;Aes.lib;CMDvals.lib;Base64.lib`），路径用 `$(Configuration)` 自动跟随配置；库由 `cmake --build` 单独构建。
+    - 解决：**移除 GUI 的全部 `ProjectReference`**，改为在 `<Link>` 中显式链接内核库（`Wenkernel.lib;Multiaes.lib;Hash.lib;Aes.lib;Valhelper.lib`），路径用 `$(Configuration)` 自动跟随配置；库由 `cmake --build` 单独构建。
     - 补充：include 路径移除旧残留 `..\wincry`（若存在会遮蔽正确的 `cry.h` 造成 ABI 错配）。
 
 11. **库的 Debug/Release 配置未编译导致链接失败**
     - 现象：库工程只编译了某一配置（如只编了 Release），GUI 用另一配置（Debug）构建时找不到对应 `.lib`。
     - 解决：先按需编译库，再编 GUI：
       ```
-      cmake --build D:\code\wencry\build_vs --config Release --target Wenkernel CMDvals   # 或 Debug
+      cmake --build D:\code\wencry\build_vs --config Release --target Wenkernel Valhelper   # 或 Debug
       ```
 
 12. **一键构建**
@@ -105,3 +105,13 @@ cmake -S <wencry> -B <wencry>\build_vs -G "Visual Studio 17 2022" -A x64 -DBUILD
 
 ### 四、已知未修复的潜在问题
 - `OnInitDialog` 中 `ver.SetFont(&mf)` 使用**局部 `CFont`**，函数返回后 GDI 字体句柄失效（建议改为成员或由父窗口持有）。
+
+---
+
+## 更新记录
+
+- v1.0.0 (2026.8.10)
+  - 初始版本
+
+- v1.1.0 (2026.8.11)
+  - 更改内核库调用方式，用以适配v4.2+版本内核API。优化界面布局，修复已知BUG。

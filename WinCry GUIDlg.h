@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "valhelper.h"
 #include "cry.h"
-#include "base64.h"
 #include <atomic>
 
 // 工作线程 -> 主线程 的自定义消息
@@ -31,6 +31,12 @@ enum UI_ENABLE
 	UI_EN_ENCRYPT,
 	UI_EN_DECRYPT,
 	UI_EN_VERIFY
+};
+
+struct Results{
+	CString resStr;
+	int ctype;
+	int htype;
 };
 
 
@@ -68,12 +74,13 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
+	Results res;
 	runcrypt* runner = nullptr;
+	WencryInformation wif;
 	DWORD dwElapsed = 0;
 	ULONGLONG fileSize = 0;
 	afx_msg void OnBnClickedOk();
 	CStatic text_1;
-	CEdit output;
 	afx_msg void OnBnClickedRadio1();
 	afx_msg void OnBnClickedRadio2();
 	afx_msg void OnBnClickedRadio3();
@@ -83,6 +90,7 @@ public:
 	CButton randomkey;
 	CEdit keyinput;
 	CProgressCtrl m_progressCtrl;
+	CStatic ctype_text;
 	CComboBox ctype;
 	afx_msg void OnCbnSelchangeCombo1();
 	CButton encrypt;
@@ -94,6 +102,7 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	CButton run;
 	afx_msg void OnCbnSelchangeCombo2();
+	CStatic htype_text;
 	CComboBox htype;
 	afx_msg void OnNMCustomdrawProgress1(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg LRESULT OnUiSetText(WPARAM wParam, LPARAM lParam);
@@ -108,6 +117,9 @@ public:
 	CStatic infile;
 	CStatic outfile;
 	CStatic keyres;
-	CStatic mode;
 	CStatic Res;
+	CStatic result_box;
+	CEdit file_size;
+	CEdit time_cnt;
+	CEdit speed;
 };
