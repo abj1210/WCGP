@@ -88,7 +88,7 @@ cmake -S <wencry> -B <wencry>\build_vs -G "Visual Studio 17 2022" -A x64 -DBUILD
 
 10. **CMake 工程引用配置传播错误 → 链接总找 Debug 库**
     - 现象：GUI 用 `ProjectReference` 引用 CMake 生成的库工程时，MSBuild 对 CMake 工程默认取第一个配置（`Debug|x64`），导致 **Release 构建也链接 `...\aes\Debug\Aes.lib`**，报 `LNK1181 无法打开输入文件`。
-    - 解决：**移除 GUI 的全部 `ProjectReference`**，改为在 `<Link>` 中显式链接内核库（`Wenkernel.lib;Multiaes.lib;Hash.lib;Aes.lib;Valhelper.lib`），路径用 `$(Configuration)` 自动跟随配置；库由 `cmake --build` 单独构建。
+    - 解决：**移除 GUI 的全部 `ProjectReference`**，改为在 `<Link>` 中显式链接内核库（`Wenkernel.lib;Aes.lib;Hash.lib;MultiPipeline.lib;MBG.lib;Valhelper.lib;Bcrypt.lib`），路径用 `$(Configuration)` 自动跟随配置；库由 `cmake --build` 单独构建。
     - 补充：include 路径移除旧残留 `..\wincry`（若存在会遮蔽正确的 `cry.h` 造成 ABI 错配）。
 
 11. **库的 Debug/Release 配置未编译导致链接失败**

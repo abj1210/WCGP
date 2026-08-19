@@ -96,12 +96,12 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(WENCRY_ROOT)\valhelper;$(WENCRY_ROOT)\kernel;$(WENCRY_ROOT)\kernel\multi_aes;$(WENCRY_ROOT)\kernel\multi_aes\aes;$(WENCRY_ROOT)\kernel\hash;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WENCRY_ROOT)\valhelper;$(WENCRY_ROOT)\kernel;$(WENCRY_ROOT)\kernel\aes;$(WENCRY_ROOT)\kernel\hash;$(WENCRY_ROOT)\kernel\multi_pipeline;$(WENCRY_ROOT)\kernel\multi_pipeline\buffergroup;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>$(WENCRY_BUILD)\kernel\$(Configuration);$(WENCRY_BUILD)\kernel\multi_aes\$(Configuration);$(WENCRY_BUILD)\kernel\hash\$(Configuration);$(WENCRY_BUILD)\kernel\multi_aes\aes\$(Configuration);$(WENCRY_BUILD)\valhelper\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Wenkernel.lib;Multiaes.lib;Hash.lib;Aes.lib;Valhelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(WENCRY_BUILD)\kernel\$(Configuration);$(WENCRY_BUILD)\kernel\aes\$(Configuration);$(WENCRY_BUILD)\kernel\hash\$(Configuration);$(WENCRY_BUILD)\kernel\multi_pipeline\$(Configuration);$(WENCRY_BUILD)\kernel\multi_pipeline\buffergroup\$(Configuration);$(WENCRY_BUILD)\valhelper\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Wenkernel.lib;Aes.lib;Hash.lib;MultiPipeline.lib;MBG.lib;Valhelper.lib;Bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -175,14 +175,14 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(WENCRY_ROOT)\valhelper;$(WENCRY_ROOT)\kernel;$(WENCRY_ROOT)\kernel\multi_aes;$(WENCRY_ROOT)\kernel\multi_aes\aes;$(WENCRY_ROOT)\kernel\hash;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WENCRY_ROOT)\valhelper;$(WENCRY_ROOT)\kernel;$(WENCRY_ROOT)\kernel\aes;$(WENCRY_ROOT)\kernel\hash;$(WENCRY_ROOT)\kernel\multi_pipeline;$(WENCRY_ROOT)\kernel\multi_pipeline\buffergroup;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(WENCRY_BUILD)\kernel\$(Configuration);$(WENCRY_BUILD)\kernel\multi_aes\$(Configuration);$(WENCRY_BUILD)\kernel\hash\$(Configuration);$(WENCRY_BUILD)\kernel\multi_aes\aes\$(Configuration);$(WENCRY_BUILD)\valhelper\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Wenkernel.lib;Multiaes.lib;Hash.lib;Aes.lib;Valhelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(WENCRY_BUILD)\kernel\$(Configuration);$(WENCRY_BUILD)\kernel\aes\$(Configuration);$(WENCRY_BUILD)\kernel\hash\$(Configuration);$(WENCRY_BUILD)\kernel\multi_pipeline\$(Configuration);$(WENCRY_BUILD)\kernel\multi_pipeline\buffergroup\$(Configuration);$(WENCRY_BUILD)\valhelper\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Wenkernel.lib;Aes.lib;Hash.lib;MultiPipeline.lib;MBG.lib;Valhelper.lib;Bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
